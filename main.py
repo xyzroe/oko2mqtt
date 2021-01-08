@@ -30,9 +30,6 @@ def scan_msg(msgData):
 
     def parse_msg_to_json(msg):
 
-        #dev_state = {}
-
-
         if len(msg) > 45:
             cuts = str(msg[msg.find("{") + 1 :msg.find("}")]).split(",")
             logging.debug(cuts)
@@ -88,7 +85,6 @@ def scan_msg(msgData):
 
                 def cut2mode(cut):
                     bytess = bytes.fromhex(cut)[1]
-                    #print (bytess)
                     switcher = {
                          0:'disarmed',
                          1:'armed_away',
@@ -134,7 +130,6 @@ def scan_msg(msgData):
 
                 def cut2general(obj):
                     general_state = byte2bits(int(cuts[3][0:2], 16))
-                    #print(general_state)
                     obj[0]['tamper'] = str(int(general_state[4-1]))
                     obj[1]['power'] = str(int(general_state[2-1]))
                     obj[2]['bat12v'] = str(int(general_state[3-1]))
@@ -154,7 +149,6 @@ def scan_msg(msgData):
 
                 def cuts2others(obj):
                     if cuts[28] or cuts[29]:
-                        #obj['system-data'] = {}
                         obj[6]['type'] = cuts[28]
                         obj[7]['value'] = cuts[29]
                     if cuts[30]: obj[1]['value'] = cuts[30] #ex1
@@ -165,13 +159,10 @@ def scan_msg(msgData):
                     if cuts[35]: obj[5]['value'] = cuts[35] #radio_sockets
 
                 dev_state = read_JSON_file('./dev/clean.json')
-                #print (dev_state)
                 dev_state['imei'] = cuts[0]
                 dev_state['hw'] = cuts[10]
                 dev_state['sw'] = cuts[9]
                 dev_state['mode'] = cut2mode(cuts[2])
-                #print(str(dev_state['imei']) + " " + str(dev_state['hw']) + " " + str(dev_state['sw']))
-                #pprint(dev_state)
                 cut2general(dev_state['general'])
                 cut2bits(cuts[2], dev_state['groups'])
 
@@ -228,6 +219,9 @@ def scan_msg(msgData):
                 for device_status in devices_status:
                     if device_status['imei'] == "0":
                         device_status['imei'] = newMsg['imei']
+                        # to do down. this way error ?
+                        #device_status['id'] = device_config['id']
+                        #device_status['name'] = device_config['name']
                         logging.info('[' + device_config['id'] + '] Device config found')
                         compare_device_status(device_status, newMsg)
                         return device_config['id'], device_config['pin']
@@ -265,16 +259,16 @@ def work_with_value (imei, action, key, value):
     def init_device_sensor(type, id, ke, value):
         if type == "general":
             name = {
-                 0:'Тампер',
-                 1:'Источник питания',
-                 2:'12B аккумулятор',
-                 3:'Li-ion аккумулятор',
-                 4:'Уровень GSM',
-                 5:'Статус код',
-                 6:'Статус',
-                 7:'Баланс',
-                 8:'Сирена',
-                 9:'Режим охраны'
+                 0: 'Tamper',
+                 1: 'Power supply',
+                 2: '12V battery',
+                 3: '5V battery',
+                 4: 'GSM level',
+                 5: 'Status code',
+                 6: 'Status',
+                 7: 'Balance',
+                 8: 'Siren',
+                 9: 'Security mode'
             }
             icon = {
                  0:'safety',
@@ -288,7 +282,6 @@ def work_with_value (imei, action, key, value):
                  8:'mdi:alarm-light',
                  9:'mdi:security',
             }
-            #return
             if int(id) < 5:
                 return json.loads('{ "name":"' + str(name.get(int(id), '')) + '","class":"' + str(icon.get(int(id), '')) + '" }')
             else:
@@ -296,19 +289,19 @@ def work_with_value (imei, action, key, value):
         elif type == "inputs":
             if ke == "alarm":
                 if int(id) < 4:
-                    return json.loads('{ "name":"Вход '+str(id+1)+'","class":"window","short":true,"cut":true }')
+                    return json.loads('{ "name":"Input '+str(id+1)+'","class":"window","short":true,"cut":true }')
                 else:
                     return json.loads('{ "name":"","class":"","short":false,"cut":false }')
             else:
                 return False
         elif type == "groups":
             if 2 < int(id) < 6:
-                return json.loads('{ "name":"Группа '+str(id+1)+'","icon":"mdi:group" }')
+                return json.loads('{ "name":"Group '+str(id+1)+'","icon":"mdi:group" }')
             else:
                 return json.loads('{ "name":"","icon":"" }')
         elif type == "outputs":
             if 0 < int(id) < 3:
-                return json.loads('{ "name":"Выход '+str(id+1)+'","icon":"mdi:flash" }')
+                return json.loads('{ "name":"Output '+str(id+1)+'","icon":"mdi:flash" }')
             else:
                 return json.loads('{ "name":"","icon":"" }')
         elif type == "adcs":
@@ -320,9 +313,13 @@ def work_with_value (imei, action, key, value):
             return json.loads('{ "name":"DS18B20 '+str(id+1)+'","class":"temperature" }')
         elif type == "radios":
             if ke == "sensor_type":
-                return json.loads('{ "name":"","class":"","sensor_type":"'+value+'" }')
+                return json.loads('{ "name":"Radio '+str(id+1)+'","class":"window","sensor_type":"'+value+'" }')
             else:
                 return False
+        elif type == "others":
+            return json.loads('{ "name":"EX '+str(id)+'","icon":"mdi:file-question" }')
+        elif type == "counters":
+            return json.loads('{ "name":"Counter '+str(id+1)+'","icon":"mdi:numeric" }')
         else:
             return json.loads('{ "name":"" }')
 
@@ -336,53 +333,38 @@ def work_with_value (imei, action, key, value):
                 if value:
                     make_msg_status(imei, type, id, ke, value)
 
-    #print(key)
     type, id, ke = key_extract_from_string(key)
-    #print(type, id, ke, value, action)
     if (type != 'sw') and (type != 'hw') and (type != 'imei'):
         if action == "A":
             for device in devices_config:
                 if device['imei'] == str(imei):
                     if type == 'mode':
-                        #print ("[" + str(action) +  "]", type, value)
                         update_device_status_value(imei, type, id, ke, value)
                         if server_config['AD_ENBL'] == True: make_msg_discovery(imei, type, id, ke)
                     else:
-                        #current = str(device[type][int(id)])
                         if str(device[type][int(id)]) == '{}':
                             beta = init_device_sensor(type, id, ke, value)
                             if beta != False:
                                 device[type][int(id)] = beta
                         try:
                             if str(device[type][int(id)]['name']):
-                                #print ("[" + str(action) +  "]", type, id, ke, value)
-                                #print (str(device[type][int(id)]['name']))
                                 if type == 'inputs':
                                     if (ke == "cut") or (ke == "short"):
-                                        #print(str(device[type][int(id)][str(ke)]))
                                         if bool(device[type][int(id)][str(ke)]) == False:
-                                            #print ("_FALSE_")
                                             update_device_status_value(imei, type, id, ke, value)
                                             break
-                                #print ("_TRUE_")
                                 update_device_status_value(imei, type, id, ke, value)
-                                if server_config['AD_ENBL'] == True: make_msg_discovery(imei, type, id, ke)#,, value device)
+                                if server_config['AD_ENBL'] == True: make_msg_discovery(imei, type, id, ke)
                         except:
                             pass
 
-
-
-                        #except:
-                            #pass
         if action == "U":
             for device in devices_config:
                 if device['imei'] == str(imei):
                     if type != 'mode':
                         if device[type][int(id)]['name']:
-                            #print ("[" + str(action) +  "]", type, id, ke, value)
                             update_device_status_value(imei, type, id, ke, value)
                     else:
-                            #print ("[" + str(action) +  "]", type, value)
                             update_device_status_value(imei, type, id, ke, value)
         if action == "D":
             pass
@@ -434,11 +416,10 @@ def make_msg_discovery(imei, type, id, ke):
             except: pass
             msgsAD.append(temp)
 
-        if type == 'adcs' or type == 'dallas' or type == 'counters' or type == 'address-sensors' or type == 'others':
+        if type == 'adcs' or type == 'dallas' or type == 'address-sensors' or type == 'others':
             unit_of_m = {
                 'adcs': "V",
                 'dallas': "°C",
-                'counters': " ",
                 'address-sensors': "",
                 'others': "",
             }
@@ -450,17 +431,28 @@ def make_msg_discovery(imei, type, id, ke):
             temp = (server_config['AD_PREF'] + "/sensor/" + UID + "/config", '{"name":"' + name + '", "uniq_id":"' + UID + '", "stat_t":"' + UID2 + '/value", "unit_of_meas":"' + unit_of_m[type] + '", ' + ad_dev + '}', 1, True)
             msgsAD.append(temp)
 
+        if type == 'counters':
+            unit_of_m = {
+                'counters': " ",
+            }
+            ad_dev = '"avty_t":"' + server_config['OKO_PREF'] + '/' + current_device['id'] + '/connect/state", "device":{"identifiers":"' + str(imei) + '"}'
+            try: ad_dev = ad_dev + ', "device_class":"' + current_device[type][int(id)]['class'] + '"'
+            except: pass
+            try: ad_dev = ad_dev + ', "icon":"' + current_device[type][int(id)]['icon'] + '"'
+            except: pass
+            temp = (server_config['AD_PREF'] + "/sensor/" + UID + "/config", '{"name":"' + name + '", "uniq_id":"' + UID + '", "stat_t":"' + UID2 + '/count", "unit_of_meas":"' + unit_of_m[type] + '", ' + ad_dev + '}', 1, True)
+            msgsAD.append(temp)
         if type == 'inputs':
             if ke == "alarm":
-                device_type = "Охранный шлейф"
+                device_type = "Security loop"
                 ad_dev = '"avty_t":"' + server_config['OKO_PREF'] + '/' + current_device['id'] + '/connect/state", "device":{ "identifiers":"' + str(imei) + '_In_' + str(id) + '", "name":"' + name + '", "manufacturer":"OKO", "model":"' + str(device_type) + '", "via_device":"' + str(imei) + '"}'
                 try: ad_dev = ad_dev + ', "device_class":"' + current_device[type][int(id)]['class'] + '"'
                 except: pass
-                name = name + " Тревога"
+                name = name + " Alarm"
             if ke == "cut" or ke == "short":
                 ad_dev = '"avty_t":"' + server_config['OKO_PREF'] + '/' + current_device['id'] + '/connect/state", "device":{ "identifiers":"' + str(imei) + '_In_' + str(id) + '"}' + ', "device_class":"problem"'
-                if ke == "cut": name = name + " Обрыв"
-                if ke == "short": name = name + " КЗ"
+                if ke == "cut": name = name + " Cut"
+                if ke == "short": name = name + " Short"
             temp = (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + '", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke +'", "pl_off":"0", "pl_on":"1", ' + ad_dev + '}', 1, True)
             msgsAD.append(temp)
 
@@ -469,25 +461,25 @@ def make_msg_discovery(imei, type, id, ke):
         if type == 'radios':
             if ke != "sensor_type":
                 if ke == "alarm" or ke == "sos":
-                    if radio_type == "event": radio_model = "Датчик события"
-                    if radio_type == "magnet": radio_model = "Датчик открытия"
-                    if radio_type == "temp": radio_model = "Датчик температуры"
-                    if radio_type == "remote": radio_model = "Радио пульт"
+                    if radio_type == "event": radio_model = "Event sensor"
+                    if radio_type == "magnet": radio_model = "Opening sensor"
+                    if radio_type == "temp": radio_model = "Temperature sensor"
+                    if radio_type == "remote": radio_model = "Remote control"
                     ad_dev = '"avty_t":"' + server_config['OKO_PREF'] + '/' + current_device['id'] + '/connect/state", "device":{ "identifiers":"' + str(imei) + '_R_' + str(id) + '", "name":"' + name + '", "manufacturer":"OKO", "model":"' + radio_model + '", "via_device":"' + str(imei) + '"}'
                     try: ad_dev = ad_dev + ', "device_class":"' + current_device[type][int(id)]['class'] + '"'
                     except: pass
                 else:
                     ad_dev = '"avty_t":"' + server_config['OKO_PREF'] + '/' + current_device['id'] + '/connect/state", "device":{ "identifiers":"' + str(imei) + '_R_' + str(id) + '"}'
                 radio_msgs = {
-                    "low_battery": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' Батарея", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + ', "device_class":"battery"}', 1, True),
-                    "tamper": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' Вскрытие", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + ', "device_class":"safety"}', 1, True),
-                    "alarm": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' Тревога", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
-                    "test": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' Тест", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + ', "device_class":"moving"}', 1, True),
+                    "low_battery": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' battery", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + ', "device_class":"battery"}', 1, True),
+                    "tamper": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' tamper", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + ', "device_class":"safety"}', 1, True),
+                    "alarm": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' alarm", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
+                    "test": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' test", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + ', "device_class":"moving"}', 1, True),
                     "sos": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' SOS", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
-                    "home": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' Дом", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
-                    "open": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' Открыть", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
-                    "close": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' Закрыть", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
-                    "temp": (server_config['AD_PREF'] + "/sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' Темп", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "unit_of_meas":"°C", ' + ad_dev + ', "device_class":"temperature"}', 1, True)
+                    "home": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' home", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
+                    "open": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' open", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
+                    "close": (server_config['AD_PREF'] + "/binary_sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' close", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "pl_off":"1", "pl_on":"0", ' + ad_dev + '}', 1, True),
+                    "temp": (server_config['AD_PREF'] + "/sensor/" + UID + "_" + ke + "/config", '{"name":"' + name + ' temp", "uniq_id":"' + UID + "_" + ke + '", "stat_t":"' + UID2 + '/' + ke + '", "unit_of_meas":"°C", ' + ad_dev + ', "device_class":"temperature"}', 1, True)
                 }
                 temp = radio_msgs[ke]
                 msgsAD.append(temp)
@@ -523,10 +515,6 @@ def make_msg_status(imei, type, id, ke, value):
 def compare_device_status(oldStatus, newStatus):
     current_device = search_device_config(newStatus['imei'])
     ddiff = DeepDiff(oldStatus, newStatus, ignore_order=False, verbose_level=2)
-    #print("Diff is ")
-    #pprint(ddiff)#
-    #pprint (oldStatus)
-    #pprint (newStatus)
     if ddiff:
 
         for key, value in ddiff.items():
@@ -535,7 +523,6 @@ def compare_device_status(oldStatus, newStatus):
                     work_with_value (newStatus['imei'], "U", key, value['new_value'])
             elif key == 'dictionary_item_added':
                 for key, value in value.items():
-                    #print (newStatus['imei'], "A", key, value)
                     work_with_value (newStatus['imei'], "A", key, value)
                 write_JSON_file(devices_config, './config/devices.json')
             elif key == 'dictionary_item_removed':
@@ -543,37 +530,20 @@ def compare_device_status(oldStatus, newStatus):
                     work_with_value (newStatus['imei'], "D", key, value)
             else:
                 logging.error("[" + str(current_device['id']) + "] Error! No ddiff values")
-        #pprint(msgsAD)
-        #print(server_config['MQTT_IP'])
 
-
-        #print (topic)
-#ттут сильно надо пробатвь!
         try:
             if msgsAD != [ ]:
                 publish.multiple(msgsAD, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth={'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
                 logging.info("[" + str(current_device['id']) + "] Publish " + str(len(msgsAD)) + " autoDiscovery messages")
-                #logging.debug("[" + str(current_device['id']) + "] " + str(len(msgsAD)) + " autoDiscovery")
+                logging.debug("[" + str(current_device['id']) + "] " + str(len(msgsAD)) + " autoDiscovery")
         except:
             pass
-        #try:
-        #if msgsST != [ ]:
-        #
-        #msg = {'topic':topic, 'payload':'offline', 'qos':1}
-        #print (will)
 
-        #topic = server_config['OKO_PREF'] + '/' + str(current_device['id']) + '/' + "connect/state"
         temp = (server_config['OKO_PREF'] + '/' + str(current_device['id']) + '/' + "connect/state", 'online', 1)
         msgsST.append(temp)
-        publish.multiple(msgsST, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})#will = {'topic':topic, 'payload':'offline', 'qos':1},
-        #publish.single(topic, payload='offline', qos=1, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', will = {'topic':topic, 'payload':'offline', 'qos':1}, auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
-        #logging.info("[" + str(current_device['id']) + "] Publish status messages")
+        publish.multiple(msgsST, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
         logging.info("[" + str(current_device['id']) + "] Publish " + str(len(msgsST)) + " status messages")
-    #except:
-        #    pass
-        #msgsAD = [{}]
 
-        #pprint(msgsAD)
         return
 
 def handle_socket_client(client_list, conn, address):
