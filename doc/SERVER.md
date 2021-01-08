@@ -28,8 +28,6 @@ configuring params for socket server
 
 <img src="./img/oko_data_transfer.png" width="60%">  
 
-
-
 #### MQTT section
 configuring params to connect to MQTT server
 ```
