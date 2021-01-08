@@ -3,9 +3,9 @@
 </div>
 
 ## Description
-Allows you to use your OKO security alarm devices without the manufacture server
+Allows you to use your OKO security alarm devices without the manufacture server.
 
-It bridges states and allows you to control your OKO devices via MQTT using your own sever.
+It bridges states and allows you to control your OKO devices via MQTT using your own server.
 
 This way, you can integrate your OKO devices into whatever smart home infrastructure you use.  
 
