@@ -10,7 +10,7 @@ Messages from known devices parses, looks for difference from last message and s
 If there is command from MQTT server and open socket for this device it sends command to device until new status message received.  
 
 <div align="center">
-<img src="./img/mqtt_oko.png" width="60%">  
+<img src="https://github.com/xyzroe/oko2mqtt/blob/main/doc/img/mqtt_oko.png?raw=true" width="60%">  
 </div>
 
 ## First run
@@ -21,7 +21,7 @@ docker run -d \
   --name oko2mqtt \  
   -p 31200:31200 \  
   --mount type=bind,source=[HOST]/config,target=/usr/src/app/config \  
-  xyzroe/oko2mqtt:latest
+  xyzroe/oko2mqtt
 ```
 or
 #### Local
@@ -33,14 +33,14 @@ python3 main.py
 ```
 After first start modify params in `server.json` that you need and restart app.
 
-##### [Server config params description](./SERVER.md)  
+##### [Server config params description](https://github.com/xyzroe/oko2mqtt/blob/main/doc/SERVER.md)  
 
 ### Add device
   * Configure data transfer settings in OKO device.
   * Wait device to connect to server and send all data.
   * After first connect modify params in `devices.json` section corresponding to your device IMEI.
 
-##### [Device config params description](./DEVICES.md)
+##### [Device config params description](https://github.com/xyzroe/oko2mqtt/blob/main/doc/DEVICES.md)
 
 ### Using Home Assistant help
 You can use Portainer.io to make all setup from GUI in a few steps:
@@ -62,4 +62,4 @@ Config dir will be available at `/share/oko2mqtt` from HA file editor.
 
 Auto Discovery allows you to configure all sensors automatically.
 You don't need to do this.
-You can change the attributes you need according to the [description](./DEVICES.md#auto-discovery-config-params-description)
+You can change the attributes you need according to the [description](https://github.com/xyzroe/oko2mqtt/blob/main/doc/DEVICES.md#auto-discovery-config-params-description)

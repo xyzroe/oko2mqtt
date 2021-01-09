@@ -13,14 +13,13 @@ This way, you can integrate your OKO devices into whatever smart home infrastruc
 
 
 ## Getting started
-The [documentation](./doc/BEGIN.md) provides you all the information needed to get up and running!
-
+[Documentation](https://github.com/xyzroe/oko2mqtt/blob/main/doc/BEGIN.md) provides you all the information you need to get started!
 
 ## Supported devices
-All [ОКО](https://око.укр/) security alarms that use [OKO TCP socket](./doc/etc/OKO_socket.pdf) protocol.    
+All [ОКО](https://око.укр/) security alarms that use [OKO TCP socket](https://github.com/xyzroe/oko2mqtt/blob/main/doc/etc/OKO_socket.pdf) protocol.    
 They are models with [GSM-controllers](https://око.укр/ohrannaya-signalizaciya/gsm-dozvonshchiki/) (ОКО-PRO/U2/7S/PRO-X/OKO-EX).
 
-## HA Lovelace UI
+## Home Assistant Lovelace UI
 <div align="center">
-<img src="./doc/img/ha_lovelace_oko.png" width="95%">  
+<img src="https://github.com/xyzroe/oko2mqtt/blob/main/doc/img/ha_lovelace_oko.png?raw=true" width="95%">  
 </div>

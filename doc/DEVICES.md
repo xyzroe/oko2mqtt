@@ -163,4 +163,4 @@ You can set `code` attribute to be asked code while control device state from HA
 
 *The attributes `icon`, `class`, `code` are only used when `AD_ENBL` set to `true` in `server.json`, but you should not remove them either `AD_ENBL` set to `false`*
 
-### [Begin](./BEGIN.md)
+### [Begin](https://github.com/xyzroe/oko2mqtt/blob/main/doc/BEGIN.md)

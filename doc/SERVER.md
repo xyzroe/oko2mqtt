@@ -26,7 +26,7 @@ configuring params for socket server
 **SOCKET_LISTEN** - The maximum length of the pending connections queue.
 >Change this parameter ONLY if you know what you are doing!
 
-<img src="./img/oko_data_transfer.png" width="60%">  
+<img src="https://github.com/xyzroe/oko2mqtt/blob/main/doc/img/oko_data_transfer.png?raw=true" width="60%">  
 
 #### MQTT section
 configuring params to connect to MQTT server
@@ -63,4 +63,4 @@ configuring other application settings
 | INFO | 20 |
 | DEBUG | 10 |
 
-### [Begin](./BEGIN.md)
+### [Begin](https://github.com/xyzroe/oko2mqtt/blob/main/doc/BEGIN.md)
