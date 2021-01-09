@@ -130,10 +130,10 @@ def scan_msg(msgData):
 
                 def cut2general(obj):
                     general_state = byte2bits(int(cuts[3][0:2], 16))
-                    obj[0]['tamper'] = str(int(general_state[4-1]))
-                    obj[1]['power'] = str(int(general_state[2-1]))
-                    obj[2]['bat12v'] = str(int(general_state[3-1]))
-                    obj[3]['bat5v'] = str(int(general_state[5-1]))
+                    obj[0]['tamper'] = str(int(general_state[3]))
+                    obj[1]['power'] = str(int(general_state[5]))
+                    obj[2]['bat12v'] = str(int(general_state[4]))
+                    obj[3]['bat5v'] = str(int(general_state[2]))
                     obj[4]['gsm'] = str(-113 + (int(cuts[5], 16) * 2)) #to dBm
                     obj[5]['code'] = str(int(cuts[1], 16))
                     obj[6]['txt'] = msg_codes[int(cuts[1], 16)]
