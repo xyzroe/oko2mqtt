@@ -200,9 +200,10 @@ def scan_msg(msgData):
     if newMsg:
         device_config = search_device_config(newMsg['imei'])
         if device_config:
-
-            publish.single(server_config['OKO_PREF'] + '/' + str(device_config['id']) + '/' + "cmnd", payload='', qos=1, retain=1, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
-
+            try:
+                publish.single(server_config['OKO_PREF'] + '/' + str(device_config['id']) + '/' + "cmnd", payload='', qos=1, retain=1, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
+            except:
+                logging.error("Failed to connect to MQTT server")
             if (device_config['sw'] != newMsg['sw']):
                 logging.warning("[" + str(device_config['id']) + "] New firmware [" + newMsg['sw'] + " vs " + device_config['sw'] + "] Check all then update config")
 
@@ -533,17 +534,22 @@ def compare_device_status(oldStatus, newStatus):
 
         try:
             if msgsAD != [ ]:
-                publish.multiple(msgsAD, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth={'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
-                logging.info("[" + str(current_device['id']) + "] Publish " + str(len(msgsAD)) + " autoDiscovery messages")
-                logging.debug("[" + str(current_device['id']) + "] " + str(len(msgsAD)) + " autoDiscovery")
+                try:
+                    publish.multiple(msgsAD, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth={'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
+                    logging.info("[" + str(current_device['id']) + "] Publish " + str(len(msgsAD)) + " autoDiscovery messages")
+                    logging.debug("[" + str(current_device['id']) + "] " + str(len(msgsAD)) + " autoDiscovery")
+                except:
+                    logging.error("Failed to connect to MQTT server")
         except:
             pass
 
         temp = (server_config['OKO_PREF'] + '/' + str(current_device['id']) + '/' + "connect/state", 'online', 1)
         msgsST.append(temp)
-        publish.multiple(msgsST, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
-        logging.info("[" + str(current_device['id']) + "] Publish " + str(len(msgsST)) + " status messages")
-
+        try:
+            publish.multiple(msgsST, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
+            logging.info("[" + str(current_device['id']) + "] Publish " + str(len(msgsST)) + " status messages")
+        except:
+            logging.error("Failed to connect to MQTT server")
         return
 
 def handle_socket_client(client_list, conn, address):
@@ -576,10 +582,12 @@ def handle_socket_client(client_list, conn, address):
             temp = (topic + "time", str(datetime.today().strftime("%H:%M:%S %d-%m-%Y")), 1, True)
             msgsST.append(temp)
             topic = topic + "state"
-            publish.multiple(msgsST, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', will = {'topic':topic, 'payload':'offline', 'qos':1}, auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
-            logging.info("[" + str(id) + "] Publish connect topic")
-            subscribe.callback(on_cmnd_receive, server_config['OKO_PREF'] + '/' + str(id) + '/cmnd', hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', will = {'topic':topic, 'payload':'offline', 'qos':1}, auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
-
+            try:
+                publish.multiple(msgsST, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', will = {'topic':topic, 'payload':'offline', 'qos':1}, auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
+                logging.info("[" + str(id) + "] Publish connect topic")
+                subscribe.callback(on_cmnd_receive, server_config['OKO_PREF'] + '/' + str(id) + '/cmnd', hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', will = {'topic':topic, 'payload':'offline', 'qos':1}, auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
+            except:
+                logging.error("Failed to connect to MQTT server")
         try:
             msg = conn.recv(1024)
         except:
@@ -602,7 +610,10 @@ def handle_socket_client(client_list, conn, address):
 
 
     proc.terminate()
-    publish.single(server_config['OKO_PREF'] + '/' + str(devId) + '/' + "connect/state", payload='offline', qos=1, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
+    try:
+        publish.single(server_config['OKO_PREF'] + '/' + str(devId) + '/' + "connect/state", payload='offline', qos=1, hostname=server_config['MQTT_IP'], port=server_config['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':server_config['MQTT_USER'], 'password':server_config['MQTT_PASSWORD']})
+    except:
+        logging.error("Failed to connect to MQTT server")
     try: conn.shutdown(socket.SHUT_RDWR)
     except: pass
     try: conn.close()
