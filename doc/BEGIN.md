@@ -46,8 +46,11 @@ After first start modify params in `server.json` that you need and restart app.
 You can use Portainer.io to make all setup from GUI in a few steps:
 
     Create container →   
-    Name: `oko2mqtt` →   
+    Name: `oko2mqtt` →  
     Image: `xyzroe/oko2mqtt:latest` →   
+    Manual network port publishing →  
+    host: `31200` →  
+    container: `31200` →  
     Volumes →   
     container: `/usr/src/app/config` →   
     Bind →   
