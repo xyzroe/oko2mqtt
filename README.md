@@ -21,5 +21,5 @@ They are models with [GSM-controllers](https://око.укр/ohrannaya-signaliza
 
 ## Home Assistant Lovelace UI
 <div align="center">
-<img src="https://github.com/xyzroe/oko2mqtt/blob/main/doc/img/ha_lovelace_oko.png?raw=true" width="95%">  
+<img src="https://github.com/xyzroe/oko2mqtt/blob/master/doc/img/ha_lovelace_oko.png?raw=true" width="95%">  
 </div>
