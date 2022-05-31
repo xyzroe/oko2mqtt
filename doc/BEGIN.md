@@ -17,10 +17,10 @@ If there is command from MQTT server and open socket for this device it sends co
 ### Install
 #### Docker
 ```
-docker run -d \  
-  --name oko2mqtt \  
-  -p 31200:31200 \  
-  --mount type=bind,source=[HOST]/config,target=/usr/src/app/config \  
+docker run -d \
+  --name oko2mqtt \
+  -p 31200:31200 \
+  --mount type=bind,source=[HOST]/config,target=/usr/src/app/config \
   xyzroe/oko2mqtt
 ```
 or
