@@ -9,7 +9,7 @@ However some sensors data arrives only if sensor exists and configured.
 *(DS18B20 sensors, radio sensors, counters, extension boards, radio sockets)*
 
 #### Main section  
-**You must set unique `id` attribute.**  
+**You can change `id` attribute, but it bmust be unique.**
 You can change `name` attribute.  
 
 You can change `pin` attribute if you what control device.  
@@ -17,9 +17,9 @@ You can set `code` attribute to be asked code while control device state from HA
 
 Attributes `imei`, `hw`, `sw` are system, please don't edit them unless you know what you do.   
 ```
-    "imei": "861230040XXXXXX",
-    "name": "Unknown",
-    "id": "unk",
+    "imei": "861230040ABCDEF",
+    "name": "OKO-EX CDEF",
+    "id": "oko_ABCBDEF",
     "pin": "1234",
     "hw": "OKO-EX",
     "sw": "E.4.2",
@@ -134,6 +134,33 @@ To process item, the attributes `name` and `icon` must be set.
             "icon": "mdi:numeric"
         },
     ],
+```
+
+#### EXn_in sections (1-4)
+4 sections, each contais total `8` items.   
+To process item, the attributes `name` and `class` must be set.  
+Also to process short and cut states, the attributes `short` and `cut` must be set `true`.
+```
+    "inputs": [
+        {
+            "name": "ex1_in 2",
+            "class": "window",
+            "short": true,
+            "cut": false
+        },
+    ],
+```
+
+#### EXn_out sections  (1-4)
+4 sections, each contais total `8` items.   
+To process item, the attributes `name` and `icon` must be set.
+```
+    "outputs": [
+        {
+            "name": "ex2_out 1",
+            "icon": "mdi:flash"
+        },
+    ],  
 ```
 
 #### Others section  
