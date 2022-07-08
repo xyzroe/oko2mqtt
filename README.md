@@ -1,6 +1,4 @@
-<div align="center">
-<h1>👁 oko2mqtt</h1>
-</div>
+# 👁 oko2mqtt
 
 ## Description
 Allows you to use your OKO security alarm devices without the manufacture server.
@@ -20,6 +18,4 @@ All [ОКО](https://око.укр/) security alarms that use [OKO TCP socket](h
 They are models with [GSM-controllers](https://око.укр/ohrannaya-signalizaciya/gsm-dozvonshchiki/) (ОКО-PRO/U2/7S/PRO-X/OKO-EX).
 
 ## Home Assistant Lovelace UI
-<div align="center">
-<img src="https://github.com/xyzroe/oko2mqtt/blob/master/doc/img/ha_lovelace_oko.png?raw=true" width="95%">  
-</div>
+![](https://github.com/xyzroe/oko2mqtt/blob/master/doc/img/ha_lovelace_oko.png?raw=true)
