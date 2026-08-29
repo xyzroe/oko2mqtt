@@ -16,6 +16,29 @@ def _topic(sub):
     return cfg.server['AD_PREF_HOMED'] + '/' + sub
 
 
+# HOMEd expose names must be camelCase; underscore is only allowed right before a numeric index
+_BASE_NAMES = {
+    'inputs': 'input', 'outputs': 'output', 'groups': 'group',
+    'ex1_in': 'ex1In', 'ex2_in': 'ex2In', 'ex3_in': 'ex3In', 'ex4_in': 'ex4In',
+    'ex1_out': 'ex1Out', 'ex2_out': 'ex2Out', 'ex3_out': 'ex3Out', 'ex4_out': 'ex4Out',
+    'sockets_bkl1': 'socketsBkl1', 'sockets_bkl2': 'socketsBkl2',
+    'sockets_bkl3': 'socketsBkl3', 'sockets_bkl4': 'socketsBkl4',
+    'adcs': 'adc', 'dallas': 'dallas', 'counters': 'counter', 'others': 'other',
+    'address-sensors': 'addressSensor', 'radios': 'radio',
+}
+
+
+def _cap(word):
+    return word[0].upper() + word[1:] if word else word
+
+
+def _indexed_name(type, id, ke=None):
+    name = _BASE_NAMES[type] + '_' + str(id + 1)
+    if ke:
+        name += _cap(ke)
+    return name
+
+
 def _binary(class_=None):
     opt = {"type": "binary"}
     if class_:
@@ -58,7 +81,7 @@ def _general_exposes(device):
         if not item:
             continue
         ke, kind, extra, title, onoff = slots[id]
-        name = 'general_' + ke
+        name = ke
         if kind == 'binary':
             result.append((name, _binary(extra), ke, None))
         elif kind == 'sensor':
@@ -73,13 +96,12 @@ def _in_group_exposes(device, type):
     for id, item in enumerate(device[type]):
         if not item:
             continue
-        base_name = str(type) + '_' + str(id + 1)
         if item.get('class'):
-            result.append((base_name + '_alarm', _binary(item['class']), 'alarm', None))
+            result.append((_indexed_name(type, id, 'alarm'), _binary(item['class']), 'alarm', None))
         if item.get('cut'):
-            result.append((base_name + '_cut', _binary('problem'), 'cut', None))
+            result.append((_indexed_name(type, id, 'cut'), _binary('problem'), 'cut', None))
         if item.get('short'):
-            result.append((base_name + '_short', _binary('problem'), 'short', None))
+            result.append((_indexed_name(type, id, 'short'), _binary('problem'), 'short', None))
     return result
 
 
@@ -88,7 +110,7 @@ def _out_group_exposes(device, type, pl_prefix=''):
     for id, item in enumerate(device[type]):
         if not item:
             continue
-        name = str(type) + '_' + str(id + 1)
+        name = _indexed_name(type, id)
         if type == 'outputs':
             onoff = ('*#' + str(id + 1) + '9', '*#' + str(id + 1) + '0')
         elif type == 'groups':
@@ -105,7 +127,7 @@ def _value_group_exposes(device, type, ke, unit=None, class_=None):
     for id, item in enumerate(device[type]):
         if not item:
             continue
-        name = str(type) + '_' + str(id + 1)
+        name = _indexed_name(type, id)
         result.append((name, _sensor(unit, item.get('class', class_)), ke, None))
     return result
 
@@ -126,12 +148,12 @@ def _radios_exposes(device):
     for id, item in enumerate(device['radios']):
         if not item:
             continue
-        base_name = 'radios_' + str(id + 1)
         for ke, (extra, kind) in keys.items():
+            name = _indexed_name('radios', id, ke)
             if kind == 'binary':
-                result.append((base_name + '_' + ke, _binary(extra), ke, None))
+                result.append((name, _binary(extra), ke, None))
             else:
-                result.append((base_name + '_' + ke, _sensor(extra), ke, None))
+                result.append((name, _sensor(extra), ke, None))
     return result
 
 
@@ -209,27 +231,21 @@ def sync_device(device):
         logging.error(f"Failed to connect to MQTT server\n{err}")
 
 
-def _expose_name_general(ke):
-    return 'general_' + ke
-
-
-def _expose_name_group(type, id, ke=None):
-    return str(type) + '_' + str(id + 1) + (('_' + ke) if ke else '')
-
-
 def queue_value(device, type, id, ke, value):
     if not cfg.server.get('AD_ENBL_HOMED'):
         return
     if type == 'mode':
         name = 'mode'
     elif type == 'general':
-        name = _expose_name_general(ke)
+        name = ke
+    elif type == 'radios':
+        name = _indexed_name(type, id, ke)
     elif type in ('outputs', 'groups') or type[-3:] == 'out' or type[:-1] == 'sockets_bkl':
-        name = _expose_name_group(type, id)
+        name = _indexed_name(type, id)
     elif type in ('inputs',) or type[-2:] == 'in':
-        name = _expose_name_group(type, id, ke)
+        name = _indexed_name(type, id, ke)
     else:
-        name = _expose_name_group(type, id)
+        name = _indexed_name(type, id)
 
     binary_keys = ('tamper', 'power', 'bat12v', 'bat5v', 'alarm', 'cut', 'short')
     toggle_keys = ('siren', 'armed', 'state')
