@@ -813,7 +813,14 @@ def compare_device_status(oldStatus, newStatus):
         for key, value in ddiff.items():
             if key == 'values_changed':
                 for key, value in value.items():
-                    work_with_value (newStatus['imei'], "U", key, value['new_value'])
+                    new_value = value['new_value']
+                    if isinstance(new_value, dict):
+                        # a whole slot (e.g. a first-ever activated input/radio/dallas) got replaced at once
+                        # (DeepDiff reports {} -> {...} as a single values_changed, not per field), expand it
+                        for sub_key, sub_value in new_value.items():
+                            work_with_value (newStatus['imei'], "A", key + "['" + sub_key + "']", sub_value)
+                    else:
+                        work_with_value (newStatus['imei'], "U", key, new_value)
             elif key == 'dictionary_item_added':
                 for key, value in value.items():
                     if isinstance(value, dict):

@@ -47,19 +47,23 @@ def _indexed_name(type, id, ke=None):
     return base + '_' + str(id + 1)
 
 
-def _binary(class_=None):
+def _binary(class_=None, title=None):
     opt = {"type": "binary"}
     if class_:
         opt["class"] = class_
+    if title:
+        opt["title"] = title
     return opt
 
 
-def _sensor(unit=None, class_=None):
+def _sensor(unit=None, class_=None, title=None):
     opt = {"type": "sensor"}
     if class_:
         opt["class"] = class_
     if unit:
         opt["unit"] = unit
+    if title:
+        opt["title"] = title
     return opt
 
 
@@ -91,9 +95,9 @@ def _general_exposes(device):
         ke, kind, extra, title, onoff = slots[id]
         name = ke
         if kind == 'binary':
-            result.append((name, _binary(extra), ke, None))
+            result.append((name, _binary(extra, title), ke, None))
         elif kind == 'sensor':
-            result.append((name, _sensor(extra), ke, None))
+            result.append((name, _sensor(extra, title=title), ke, None))
         else:
             result.append((name, _toggle(title), ke, onoff))
     return result
@@ -102,24 +106,26 @@ def _general_exposes(device):
 def _in_group_exposes(device, type):
     result = []
     for id, item in enumerate(device[type]):
-        if not item:
+        name = item.get('name') if item else None
+        if not name:
             continue
         # 'class'/'cut'/'short' are only set once the app auto-detects the sensor kind;
         # a manually named slot (just {"name": ...}) still gets a plain 'alarm' expose
-        result.append((_indexed_name(type, id, 'alarm'), _binary(item.get('class')), 'alarm', None))
+        result.append((_indexed_name(type, id, 'alarm'), _binary(item.get('class'), name + ' Alarm'), 'alarm', None))
         if item.get('cut'):
-            result.append((_indexed_name(type, id, 'cut'), _binary('problem'), 'cut', None))
+            result.append((_indexed_name(type, id, 'cut'), _binary('problem', name + ' Cut'), 'cut', None))
         if item.get('short'):
-            result.append((_indexed_name(type, id, 'short'), _binary('problem'), 'short', None))
+            result.append((_indexed_name(type, id, 'short'), _binary('problem', name + ' Short'), 'short', None))
     return result
 
 
 def _out_group_exposes(device, type, pl_prefix=''):
     result = []
     for id, item in enumerate(device[type]):
-        if not item:
+        name = item.get('name') if item else None
+        if not name:
             continue
-        name = _indexed_name(type, id)
+        expose_name = _indexed_name(type, id)
         if type == 'outputs':
             onoff = ('*#' + str(id + 1) + '9', '*#' + str(id + 1) + '0')
         elif type == 'groups':
@@ -127,42 +133,45 @@ def _out_group_exposes(device, type, pl_prefix=''):
         else:
             ex = type[2:3]
             onoff = ('*' + ex + '#' + str(id + 1) + '9', '*' + ex + '#' + str(id + 1) + '0')
-        result.append((name, _toggle(item.get('name')), 'state', onoff))
+        result.append((expose_name, _toggle(name), 'state', onoff))
     return result
 
 
 def _value_group_exposes(device, type, ke, unit=None, class_=None):
     result = []
     for id, item in enumerate(device[type]):
-        if not item:
+        name = item.get('name') if item else None
+        if not name:
             continue
-        name = _indexed_name(type, id)
-        result.append((name, _sensor(unit, item.get('class', class_)), ke, None))
+        expose_name = _indexed_name(type, id)
+        result.append((expose_name, _sensor(unit, item.get('class', class_), name), ke, None))
     return result
 
 
 def _radios_exposes(device):
     result = []
     keys = {
-        'low_battery': ('battery', 'binary'),
-        'tamper': ('safety', 'binary'),
-        'alarm': (None, 'binary'),
-        'test': ('moving', 'binary'),
-        'sos': (None, 'binary'),
-        'home': (None, 'binary'),
-        'open': (None, 'binary'),
-        'close': (None, 'binary'),
-        'temp': ('°C', 'sensor'),
+        'low_battery': ('battery', 'binary', 'Low battery'),
+        'tamper': ('safety', 'binary', 'Tamper'),
+        'alarm': (None, 'binary', 'Alarm'),
+        'test': ('moving', 'binary', 'Test'),
+        'sos': (None, 'binary', 'SOS'),
+        'home': (None, 'binary', 'Home'),
+        'open': (None, 'binary', 'Open'),
+        'close': (None, 'binary', 'Close'),
+        'temp': ('°C', 'sensor', 'Temperature'),
     }
     for id, item in enumerate(device['radios']):
-        if not item:
+        name = item.get('name') if item else None
+        if not name:
             continue
-        for ke, (extra, kind) in keys.items():
-            name = _indexed_name('radios', id, ke)
+        for ke, (extra, kind, title) in keys.items():
+            expose_name = _indexed_name('radios', id, ke)
+            title = name + ' ' + title
             if kind == 'binary':
-                result.append((name, _binary(extra), ke, None))
+                result.append((expose_name, _binary(extra, title), ke, None))
             else:
-                result.append((name, _sensor(extra), ke, None))
+                result.append((expose_name, _sensor(extra, title=title), ke, None))
     return result
 
 
