@@ -787,6 +787,8 @@ def make_msg_status(imei, type, id, ke, value):
     url = cfg.server['OKO_PREF'] + '/' + str(current_device['id']) + '/' + str(type)
     if type != 'mode':
          url = url + '/' + str(id+1) + '/' + str(ke)
+    if isinstance(value, (dict, list)):
+        value = json.dumps(value)
     temp = (url, value, 1, True)
     msgsST.append(temp)
 
@@ -814,7 +816,13 @@ def compare_device_status(oldStatus, newStatus):
                     work_with_value (newStatus['imei'], "U", key, value['new_value'])
             elif key == 'dictionary_item_added':
                 for key, value in value.items():
-                    work_with_value (newStatus['imei'], "A", key, value)
+                    if isinstance(value, dict):
+                        # a whole slot (e.g. a first-ever activated input/radio/dallas) was added at once,
+                        # DeepDiff doesn't break it down per field, so expand it into individual key/value adds
+                        for sub_key, sub_value in value.items():
+                            work_with_value (newStatus['imei'], "A", key + "['" + sub_key + "']", sub_value)
+                    else:
+                        work_with_value (newStatus['imei'], "A", key, value)
                 etc.write_JSON_file(cfg.devices, './config/devices.json')
             elif key == 'dictionary_item_removed':
                 for key, value in value.items():
