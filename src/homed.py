@@ -161,11 +161,28 @@ def _radios_exposes(device):
         'close': (None, 'binary', 'Close'),
         'temp': ('°C', 'sensor', 'Temperature'),
     }
+    # which fields actually apply depends on the radio sensor_type (see bytes2radio() in oko.py);
+    # 'magnet'/'event'/'fire' sensors don't have sos/open/close/home, 'remote' ones don't have alarm/tamper/...
+    fields_by_type = {
+        'magnet': ('alarm', 'tamper', 'low_battery', 'test'),
+        'event': ('alarm', 'tamper', 'low_battery', 'test'),
+        'fire': ('alarm', 'tamper', 'low_battery', 'test'),
+        'remote_simple': ('sos', 'open', 'close', 'home'),
+        'remote': ('sos', 'open', 'close', 'home'),
+        'temp_extender': ('alarm', 'tamper', 'low_battery', 'test', 'temp'),
+        'temp': ('alarm', 'tamper', 'low_battery', 'test', 'temp'),
+    }
+    # sensor_type is only known once auto-detected by the app; if the slot was named manually
+    # (config only has {"name": ...}) fall back to the most common case (a magnet/door-window sensor)
+    default_fields = ('alarm', 'tamper', 'low_battery', 'test')
+
     for id, item in enumerate(device['radios']):
         name = item.get('name') if item else None
         if not name:
             continue
-        for ke, (extra, kind, title) in keys.items():
+        allowed = fields_by_type.get(item.get('sensor_type'), default_fields)
+        for ke in allowed:
+            extra, kind, title = keys[ke]
             expose_name = _indexed_name('radios', id, ke)
             title = name + ' ' + title
             if kind == 'binary':
@@ -272,8 +289,17 @@ def queue_value(device, type, id, ke, value):
     binary_keys = ('tamper', 'power', 'bat12v', 'bat5v', 'alarm', 'cut', 'short',
                    'low_battery', 'test', 'sos', 'home', 'open', 'close')
     toggle_keys = ('siren', 'armed', 'state')
+    # raw value '1' means "clear/off" (not "true") for these particular (type, ke) sensors,
+    # matching the pl_off/pl_on payloads already used for the Home Assistant discovery of the same fields
+    inverted = {
+        ('general', 'tamper'), ('general', 'bat12v'), ('general', 'bat5v'),
+        ('radios', 'low_battery'), ('radios', 'tamper'), ('radios', 'alarm'), ('radios', 'test'),
+        ('radios', 'sos'), ('radios', 'home'), ('radios', 'open'), ('radios', 'close'),
+    }
     if ke in binary_keys or ke in toggle_keys or type in ('inputs',) or type[-2:] == 'in':
         payload_value = bool(str(value) not in ('0', 'False', 'false'))
+        if (type, ke) in inverted:
+            payload_value = not payload_value
     else:
         payload_value = value
 
