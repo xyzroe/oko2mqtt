@@ -355,8 +355,8 @@ def scan_msg(msgData):
         if device_config:
             try:
                 publish.single(cfg.server['OKO_PREF'] + '/' + str(device_config['id']) + '/' + "cmnd", payload='', qos=1, retain=1, hostname=cfg.server['MQTT_IP'], port=cfg.server['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':cfg.server['MQTT_USER'], 'password':cfg.server['MQTT_PASSWORD']})
-            except:
-                logging.error("Failed to connect to MQTT server")
+            except Exception as err:
+                logging.error(f"Failed to connect to MQTT server\n{err}")
             if (device_config['sw'] != newMsg['sw']):
                 logging.warning("[" + str(device_config['id']) + "] New firmware [" + newMsg['sw'] + " vs " + device_config['sw'] + "] Check all then update config")
 
@@ -567,8 +567,11 @@ def work_with_value (imei, action, key, value):
                     if type == 'mode':
                         update_device_status_value(imei, type, id, ke, value)
                     else:
-                        if device[type][int(id)]['name']:
-                             update_device_status_value(imei, type, id, ke, value)
+                        try:
+                            if device[type][int(id)]['name']:
+                                update_device_status_value(imei, type, id, ke, value)
+                        except KeyError:
+                            pass
 
         if action == "D":
             pass
@@ -822,8 +825,8 @@ def compare_device_status(oldStatus, newStatus):
             try:
                 publish.multiple(msgsAD, hostname=cfg.server['MQTT_IP'], port=cfg.server['MQTT_PORT'], client_id='oko2mqtt', auth={'username':cfg.server['MQTT_USER'], 'password':cfg.server['MQTT_PASSWORD']})
                 logging.info("[" + str(current_device['id']) + "] Publish " + str(len(msgsAD)) + " autoDiscovery messages")
-            except:
-                logging.error("Failed to connect to MQTT server")
+            except Exception as err:
+                logging.error(f"Failed to connect to MQTT server\n{err}")
         else:
             logging.debug("[" + str(current_device['id']) + "] " + "0 autoDiscovery")
         
@@ -835,8 +838,8 @@ def compare_device_status(oldStatus, newStatus):
             try:
                 publish.multiple(msgsST, hostname=cfg.server['MQTT_IP'], port=cfg.server['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':cfg.server['MQTT_USER'], 'password':cfg.server['MQTT_PASSWORD']})
                 logging.info("[" + str(current_device['id']) + "] Published " + str(len(msgsST)) + " status messages")
-            except:
-                logging.error("Failed to connect to MQTT server")
+            except Exception as err:
+                logging.error(f"Failed to connect to MQTT server\n{err}")
         else:
             logging.debug("[" + str(current_device['id']) + "] " + "0 status messages")
 
@@ -846,8 +849,8 @@ def compare_device_status(oldStatus, newStatus):
             try:
                 publish.multiple(msgsCN, hostname=cfg.server['MQTT_IP'], port=cfg.server['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':cfg.server['MQTT_USER'], 'password':cfg.server['MQTT_PASSWORD']})
                 logging.info("[" + str(current_device['id']) + "] Published " + str(len(msgsCN)) + " connect messages")
-            except:
-                logging.error("Failed to connect to MQTT server")
+            except Exception as err:
+                logging.error(f"Failed to connect to MQTT server\n{err}")
         else:
             logging.debug("[" + str(current_device['id']) + "] " + "0 status messages")
 
@@ -894,7 +897,6 @@ def cmnd(id, pin, conn, address):
         logging.debug("[" + str(id) + "] Try to subscribe on cmnd topic")
         subscribe.callback(on_cmnd_receive, cfg.server['OKO_PREF'] + '/' + str(id) + '/cmnd', hostname=cfg.server['MQTT_IP'], port=cfg.server['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':cfg.server['MQTT_USER'], 'password':cfg.server['MQTT_PASSWORD']}) #will = {'topic':topic, 'payload':'offline', 'qos':1, 'retain': False}, 
         logging.info("[" + str(id) + "] Subscribed on cmnd topic")
-    except:
-        #("error")
-        logging.error("Failed to connect to MQTT server")
+    except Exception as err:
+        logging.error(f"Failed to connect to MQTT server\n{err}")
       

@@ -24,6 +24,17 @@ docker run -d \
   xyzroe/oko2mqtt
 ```
 or
+#### Docker Compose (build locally, any architecture)
+```
+git clone git@github.com:xyzroe/oko2mqtt.git
+cd oko2mqtt
+docker compose up -d --build
+```
+This builds the image on your own machine, so it works on any CPU architecture instead of relying on a pre-built image from Docker Hub.
+
+> Since the app runs inside a container, `127.0.0.1`/`localhost` in `server.json`'s `MQTT_IP` refers to the container itself, not the docker host. If your MQTT broker runs on the host (or in another container), set `MQTT_IP` to `host.docker.internal` (already mapped in `docker-compose.yml` via `extra_hosts`), or to the broker container's service/container name if it's on the same docker network.
+
+or
 #### Local
 ```
 git clone git@github.com:xyzroe/oko2mqtt.git

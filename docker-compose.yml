@@ -1,0 +1,14 @@
+services:
+  oko2mqtt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oko2mqtt
+    restart: unless-stopped
+    ports:
+      - "31200:31200"
+    volumes:
+      - ./config:/usr/src/app/config
+    extra_hosts:
+      # lets the container reach an MQTT broker running on the docker host via 127.0.0.1
+      - "host.docker.internal:host-gateway"
