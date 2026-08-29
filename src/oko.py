@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging, json, time
 
-from src import etc, cfg, mqtt
+from src import etc, cfg, mqtt, homed
 
 
 import paho.mqtt.publish as publish
@@ -514,6 +514,9 @@ def work_with_value (imei, action, key, value):
                     device_status[type][int(id)][ke] = value
                 #if value:
                 make_msg_status(imei, type, id, ke, value)
+                current_device = cfg.search_device(imei)
+                if current_device:
+                    homed.queue_value(current_device, type, id, ke, value)
 
     def delete_device_status_value(imei, type, id):
         logging.debug(f"del {imei} - {type} - {id}")
@@ -552,6 +555,7 @@ def work_with_value (imei, action, key, value):
                                             break
                                 update_device_status_value(imei, type, id, ke, value)
                                 if cfg.server['AD_ENBL'] == True: make_msg_discovery(imei, type, id, ke)
+                                homed.sync_device(device)
                         except:
                             pass
                     #if type[:2] == 'ex':
@@ -854,6 +858,8 @@ def compare_device_status(oldStatus, newStatus):
         else:
             logging.debug("[" + str(current_device['id']) + "] " + "0 status messages")
 
+        homed.flush(current_device)
+
         return True
     else:
         return False
@@ -862,7 +868,13 @@ def cmnd(id, pin, conn, address):
 
     cfg.logs()
 
+    cmnd_topic = cfg.server['OKO_PREF'] + '/' + str(id) + '/' + "cmnd"
+    homed_td = homed.td_subscription(id, cmnd_topic)
+
     def on_cmnd_receive(client, userdata, message):
+        if homed_td and message.topic == homed_td[0]:
+            homed_td[1](client, userdata, message)
+            return
         cmd = message.payload.decode()
         msg = "COMMAND:" + pin + cmd + ",70;"
         msg = msg.encode()
@@ -895,7 +907,8 @@ def cmnd(id, pin, conn, address):
         logging.info("[" + str(id) + "] Published connect topic")
         
         logging.debug("[" + str(id) + "] Try to subscribe on cmnd topic")
-        subscribe.callback(on_cmnd_receive, cfg.server['OKO_PREF'] + '/' + str(id) + '/cmnd', hostname=cfg.server['MQTT_IP'], port=cfg.server['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':cfg.server['MQTT_USER'], 'password':cfg.server['MQTT_PASSWORD']}) #will = {'topic':topic, 'payload':'offline', 'qos':1, 'retain': False}, 
+        cmnd_topics = [cmnd_topic] + ([homed_td[0]] if homed_td else [])
+        subscribe.callback(on_cmnd_receive, cmnd_topics, hostname=cfg.server['MQTT_IP'], port=cfg.server['MQTT_PORT'], client_id='oko2mqtt', auth = {'username':cfg.server['MQTT_USER'], 'password':cfg.server['MQTT_PASSWORD']}) #will = {'topic':topic, 'payload':'offline', 'qos':1, 'retain': False}, 
         logging.info("[" + str(id) + "] Subscribed on cmnd topic")
     except Exception as err:
         logging.error(f"Failed to connect to MQTT server\n{err}")

@@ -12,3 +12,11 @@ services:
     extra_hosts:
       # lets the container reach an MQTT broker running on the docker host via 127.0.0.1
       - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - homed_default
+
+networks:
+  # join the existing network of the mqtt-broker container (external compose stack)
+  homed_default:
+    external: true

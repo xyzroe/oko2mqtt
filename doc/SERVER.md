@@ -38,14 +38,18 @@ configuring params to connect to MQTT server
 "OKO_PREF": "oko",
 "AD_ENBL": true,
 "AD_PREF": "homeassistant",
+"AD_ENBL_HOMED": false,
+"AD_PREF_HOMED": "homed",
 ```
 **MQTT_USER** - MQTT server authentication user  
 **MQTT_PASSWORD** - MQTT server authentication password   
 **MQTT_IP** - MQTT server IP address  
 **MQTT_PORT** - MQTT server IP port  
 **OKO_PREF**- The prefix for the devices topics  
-**AD_ENBL** -  Auto discovery publishing enabled or not  
-**AD_PREF** - The prefix for the auto discovery topics  
+**AD_ENBL** -  Auto discovery publishing enabled or not (Home Assistant)  
+**AD_PREF** - The prefix for the auto discovery topics (Home Assistant)  
+**AD_ENBL_HOMED** - Auto discovery publishing enabled or not ([HOMEd](https://wiki.homed.dev/) Custom service). Registers the device via `{AD_PREF_HOMED}/command/custom` and publishes values to `{AD_PREF_HOMED}/fd/custom/{id}`  
+**AD_PREF_HOMED** - The root MQTT topic (`prefix`) used by HOMEd services, must match the `prefix` param in HOMEd Custom's config  
 
 #### Other section  
 configuring other application settings
