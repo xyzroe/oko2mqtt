@@ -32,11 +32,19 @@ def _cap(word):
     return word[0].upper() + word[1:] if word else word
 
 
+def _camel(word):
+    # "low_battery" -> "lowBattery": HOMEd names must be camelCase, snake_case is not parsed
+    parts = word.split('_')
+    return parts[0] + ''.join(_cap(p) for p in parts[1:] if p)
+
+
 def _indexed_name(type, id, ke=None):
-    name = _BASE_NAMES[type] + '_' + str(id + 1)
+    # the numeric index must be a trailing suffix (e.g. temperature_1/temperature_2 per HOMEd docs),
+    # never followed by more words, otherwise HOMEd ignores everything after the digit
+    base = _BASE_NAMES[type]
     if ke:
-        name += _cap(ke)
-    return name
+        base = base + _cap(_camel(ke))
+    return base + '_' + str(id + 1)
 
 
 def _binary(class_=None):
@@ -96,8 +104,9 @@ def _in_group_exposes(device, type):
     for id, item in enumerate(device[type]):
         if not item:
             continue
-        if item.get('class'):
-            result.append((_indexed_name(type, id, 'alarm'), _binary(item['class']), 'alarm', None))
+        # 'class'/'cut'/'short' are only set once the app auto-detects the sensor kind;
+        # a manually named slot (just {"name": ...}) still gets a plain 'alarm' expose
+        result.append((_indexed_name(type, id, 'alarm'), _binary(item.get('class')), 'alarm', None))
         if item.get('cut'):
             result.append((_indexed_name(type, id, 'cut'), _binary('problem'), 'cut', None))
         if item.get('short'):
@@ -247,11 +256,14 @@ def queue_value(device, type, id, ke, value):
     else:
         name = _indexed_name(type, id)
 
-    binary_keys = ('tamper', 'power', 'bat12v', 'bat5v', 'alarm', 'cut', 'short')
+    if ke == 'sensor_type':
+        # config attribute, not a value capability - not declared as an expose
+        return
+
+    binary_keys = ('tamper', 'power', 'bat12v', 'bat5v', 'alarm', 'cut', 'short',
+                   'low_battery', 'test', 'sos', 'home', 'open', 'close')
     toggle_keys = ('siren', 'armed', 'state')
-    if ke in binary_keys or (type in ('inputs',) or type[-2:] == 'in'):
-        payload_value = bool(str(value) not in ('0', 'False', 'false'))
-    elif ke in toggle_keys:
+    if ke in binary_keys or ke in toggle_keys or type in ('inputs',) or type[-2:] == 'in':
         payload_value = bool(str(value) not in ('0', 'False', 'false'))
     else:
         payload_value = value
